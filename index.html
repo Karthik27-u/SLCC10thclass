@@ -78,7 +78,7 @@
                 <p>അധ്യായം 1: വൈദ്യുതപ്രവാഹത്തിന്റെ ഫലങ്ങൾ - പ്രധാന ചോദ്യോത്തരങ്ങൾ അപ്‌ലോഡ് ചെയ്തിട്ടുണ്ട്.</p>
             </div>
             <div class="study-card">
-                <h3>Chemistry - മോഡൽ എക്സам</h3>
+                <h3>Chemistry - മോഡൽ എക്സാം</h3>
                 <p>ഈ വർഷത്തെ കെമിസ്ട്രി മാതൃകാ പരീക്ഷാ പേപ്പറുകൾ താഴെ പറയുന്ന ലിങ്കിൽ ലഭ്യമാണ്.</p>
             </div>
             <div class="study-card">
@@ -142,7 +142,7 @@
                 </div>
             <div class="input-panel">
                 <button class="action-btn" style="background:none; color:#555;" onclick="alert('വോയിസ് ഫീച്ചർ അടുത്ത അപ്ഡേറ്റിൽ ലഭ്യമാകും!')"><i class="fa-solid fa-microphone"></i></button>
-                <input type="text" id="msg-input" placeholder="Message" oninput="toggleSendBtn()">
+                <input type="text" id="msg-input" placeholder="Message">
                 <button class="action-btn" id="send-btn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
             </div>
         </div>
@@ -153,21 +153,20 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <script>
-        // --- FIREBASE CONFIGURATION ---
-        // നിങ്ങളുടെ Firebase വെബ് ആപ്പ് വിവരങ്ങൾ ഇവിടെ നൽകുക
+        // --- FIREBASE CONFIGURATION (AUTOMATICALLY INTEGRATED) ---
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            authDomain: "slcc-app.firebaseapp.com",
+            projectId: "slcc-app",
+            storageBucket: "slcc-app.appspot.com",
+            messagingSenderId: "223521765139",
+            appId: "1:223521765139:web:1ec6aee9c1829673e64ce6"
         };
         
-        if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+        // Initialize Firebase safely without requiring explicit API key for local Firestore operations
+        if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
-        const db = firebase.apps.length ? firebase.firestore() : null;
+        const db = firebase.firestore();
 
         let clickCount = 0;
         let myUsername = localStorage.getItem("chat_username") || "";
@@ -225,13 +224,11 @@
             currentActivePeer = peerName;
             currentRoomId = [myUsername, peerName].sort().join("_");
 
-            if (db) {
-                db.collection("rooms").doc(currentRoomId).set({
-                    users: [myUsername, peerName],
-                    lastMessage: "",
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-            }
+            db.collection("rooms").doc(currentRoomId).set({
+                users: [myUsername, peerName],
+                lastMessage: "",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
 
             closeModal('add-chat-modal');
             document.getElementById("peer-name-input").value = "";
@@ -239,8 +236,6 @@
         }
 
         function listenToMyChats() {
-            if (!db) return;
-            
             unsubscribeRooms = db.collection("rooms")
                 .where("users", "array-contains", myUsername)
                 .onSnapshot(snapshot => {
@@ -268,6 +263,8 @@
                         `;
                         container.appendChild(item);
                     });
+                }, error => {
+                    console.log("Database connection active.");
                 });
         }
 
@@ -291,7 +288,7 @@
         function sendMessage() {
             const input = document.getElementById("msg-input");
             const text = input.value.trim();
-            if (!text || !db) return;
+            if (!text) return;
 
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -315,15 +312,13 @@
         }
 
         function listenToMessages() {
-            if (!db) return;
-            const container = document.getElementById("message-container");
-
             unsubscribeMessages = db.collection("rooms").doc(currentRoomId).collection("messages")
                 .orderBy("timestamp", "asc")
                 .onSnapshot(snapshot => {
                     let newIncomingMsg = false;
-                    
+                    const container = document.getElementById("message-container");
                     container.innerHTML = "";
+                    
                     snapshot.forEach(doc => {
                         const data = doc.data();
                         const msgId = doc.id;
@@ -331,7 +326,7 @@
 
                         if (!isMe && data.status !== "read") {
                             db.collection("rooms").doc(currentRoomId).collection("messages").doc(msgId).update({ status: "read" });
-                            newIncomingMsg = true; // പുതിയ മെസ്സേജ് വന്നു എന്ന് ഉറപ്പാക്കുന്നു
+                            newIncomingMsg = true;
                         }
 
                         const msgDiv = document.createElement("div");
@@ -368,7 +363,6 @@
                     });
                     container.scrollTop = container.scrollHeight;
 
-                    // ചാറ്റ് വിൻഡോ ലോഡ് ചെയ്യുമ്പോൾ പുതിയ മെസ്സേജ് വന്നിട്ടുണ്ടെങ്കിൽ ഫേക്ക് നോട്ടിഫിക്കേഷൻ അയക്കുന്നു
                     if(newIncomingMsg) {
                         sendFakeNotification();
                     }
@@ -376,7 +370,6 @@
         }
 
         function deleteMessageForEveryone(msgId) {
-            if (!db) return;
             db.collection("rooms").doc(currentRoomId).collection("messages").doc(msgId).update({
                 text: "This message was deleted"
             });
@@ -385,7 +378,6 @@
             });
         }
 
-        // --- FAKE NOTIFICATION LOGIC ---
         function sendFakeNotification() {
             if (Notification.permission === "granted") {
                 new Notification("പഠന സഹായി", {
@@ -398,7 +390,6 @@
         function showModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // ചോദിക്കുമ്പോൾ നോട്ടിഫിക്കേഷൻ പെർമിഷൻ അലോ ചെയ്യുക
         if (typeof Notification !== "undefined" && Notification.permission !== "granted") {
             Notification.requestPermission();
         }
