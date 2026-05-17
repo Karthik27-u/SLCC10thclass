@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSLC STUDY HELP</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body, html { height: 100%; background-color: #f0f2f5; }
+
+        /* --- STUDY SCREEN (FAKE HOME) --- */
+        #study-screen { display: flex; flex-direction: column; height: 100%; background: #ffffff; }
+        .study-header { background: #007bff; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; cursor: pointer; user-select: none; }
+        .study-content { flex: 1; padding: 20px; overflow-y: auto; }
+        .study-card { background: #f8f9fa; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 15px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .study-card h3 { margin-bottom: 5px; color: #333; font-size: 16px; }
+        .study-card p { color: #666; font-size: 14px; }
+        
+        /* ADMOB AD CONTAINER */
+        .ad-container { background: #e9ecef; text-align: center; padding: 10px; font-size: 12px; color: #777; border-top: 1px solid #ddd; font-weight: bold; }
+
+        /* --- DIALOGS (SECRET CODE & LOGIN) --- */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .modal h3 { margin-bottom: 15px; color: #333; }
+        .modal input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; outline: none; font-size: 16px; text-align: center; }
+        .modal button { background: #075e54; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; }
+
+        /* --- MAIN APP SCREEN (WHATSAPP LOOK) --- */
+        #app-screen { display: none; flex-direction: column; height: 100%; }
+        
+        /* HOME SCREEN (CHAT LIST) */
+        #chat-list-view { display: flex; flex-direction: column; height: 100%; background: white; }
+        .app-header { background: #075e54; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 20px; font-weight: bold; }
+        .chat-list { flex: 1; overflow-y: auto; }
+        .chat-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #f2f2f2; cursor: pointer; }
+        .chat-item:active { background-color: #f5f5f5; }
+        .chat-avatar { width: 48px; height: 48px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #555; font-size: 20px; margin-right: 15px; }
+        .chat-info { flex: 1; }
+        .chat-name { font-weight: bold; color: #111; font-size: 16px; margin-bottom: 2px; }
+        .chat-preview { color: #666; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        
+        /* FLOATING ACTION BUTTON */
+        .fab { position: fixed; bottom: 30px; right: 30px; background: #25d366; color: white; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; z-index: 10; }
+
+        /* --- INDIVIDUAL CHAT WINDOW --- */
+        #chat-window-view { display: none; flex-direction: column; height: 100%; background: #efeae2; position: relative; }
+        .chat-window-header { background: #075e54; color: white; padding: 10px 15px; display: flex; align-items: center; }
+        .back-btn { font-size: 18px; margin-right: 15px; cursor: pointer; padding: 5px; }
+        .chat-window-title { font-weight: bold; font-size: 18px; flex: 1; }
+        
+        .message-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; }
+        .msg { max-width: 75%; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; font-size: 15px; position: relative; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .msg.sent { background: #d9fdd3; align-self: flex-end; border-top-right-radius: 0; }
+        .msg.received { background: #ffffff; align-self: flex-start; border-top-left-radius: 0; }
+        
+        .msg-text { margin-bottom: 2px; line-height: normal; }
+        .msg-meta { font-size: 10px; color: #666; align-self: flex-end; display: flex; align-items: center; gap: 3px; }
+        .msg-deleted { font-style: italic; color: #888 !important; }
+
+        /* INPUT AREA */
+        .input-panel { padding: 8px; background: #f0f2f5; display: flex; align-items: center; gap: 8px; }
+        .input-panel input { flex: 1; padding: 10px 15px; border: none; border-radius: 20px; outline: none; font-size: 15px; }
+        .action-btn { background: #075e54; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; }
+
+        /* TICKS COLOR */
+        .fa-check-double.read { color: #53bdeb; }
+    </style>
+</head>
+<body>
+
+    <div id="study-screen">
+        <div class="study-header" onclick="handleSecretClick()">SSLC പഠന സഹായി 2026</div>
+        <div class="study-content">
+            <div class="study-card">
+                <h3>Physics - ഫോക്കസ് ഏരിയ</h3>
+                <p>അധ്യായം 1: വൈദ്യുതപ്രവാഹത്തിന്റെ ഫലങ്ങൾ - പ്രധാന ചോദ്യോത്തരങ്ങൾ അപ്‌ലോഡ് ചെയ്തിട്ടുണ്ട്.</p>
+            </div>
+            <div class="study-card">
+                <h3>Chemistry - മോഡൽ എക്സам</h3>
+                <p>ഈ വർഷത്തെ കെമിസ്ട്രി മാതൃകാ പരീക്ഷാ പേപ്പറുകൾ താഴെ പറയുന്ന ലിങ്കിൽ ലഭ്യമാണ്.</p>
+            </div>
+            <div class="study-card">
+                <h3>Biology - ഡൗൺലോഡ് നോട്ട്സ്</h3>
+                <p>പാഠഭാഗങ്ങളിലെ പ്രധാന ചിത്രങ്ങളും അവയുടെ ഭാഗങ്ങളും അടയാളപ്പെടുത്തിയ നോട്ട്സ്.</p>
+            </div>
+        </div>
+        
+        <div class="ad-container">
+            <i class="fa-solid fa-rectangle-ad"></i> AdMob Banner Advertisement Place
+        </div>
+    </div>
+
+    <div id="secret-modal" class="modal">
+        <div class="modal-content">
+            <h3>രഹസ്യ കോഡ് നൽകുക</h3>
+            <input type="password" id="secret-code-input" placeholder="Enter Code">
+            <button onclick="verifySecretCode()">Verify</button>
+        </div>
+    </div>
+
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <h3>നിങ്ങളുടെ പേര് നൽകുക</h3>
+            <input type="text" id="username-input" placeholder="Your Name...">
+            <button onclick="saveUsername()">Get Started</button>
+        </div>
+    </div>
+
+    <div id="add-chat-modal" class="modal">
+        <div class="modal-content">
+            <h3>ആരോടാണ് ചാറ്റ് ചെയ്യേണ്ടത്?</h3>
+            <input type="text" id="peer-name-input" placeholder="അവരുടെ പേര് അടിക്കുക...">
+            <button onclick="createNewChatChannel()">Add Chat</button>
+            <button onclick="closeModal('add-chat-modal')" style="background:#888; margin-top:5px;">Cancel</button>
+        </div>
+    </div>
+
+    <div id="app-screen">
+        
+        <div id="chat-list-view">
+            <div class="app-header">
+                <span>WhatsApp</span>
+                <i class="fa-solid fa-ellipsis-vertical" style="font-size: 18px;"></i>
+            </div>
+            <div class="chat-list" id="chat-list-container">
+                </div>
+            <div class="fab" onclick="showModal('add-chat-modal')">
+                <i class="fa-solid fa-comment-medical"></i>
+            </div>
+        </div>
+
+        <div id="chat-window-view">
+            <div class="chat-window-header">
+                <i class="fa-solid fa-arrow-left back-btn" onclick="backToChatList()"></i>
+                <div class="chat-window-title" id="chat-window-title-name">User Name</div>
+                <i class="fa-solid fa-video" style="margin-right: 20px;"></i>
+                <i class="fa-solid fa-phone"></i>
+            </div>
+            <div class="message-area" id="message-container">
+                </div>
+            <div class="input-panel">
+                <button class="action-btn" style="background:none; color:#555;" onclick="alert('വോയിസ് ഫീച്ചർ അടുത്ത അപ്ഡേറ്റിൽ ലഭ്യമാകും!')"><i class="fa-solid fa-microphone"></i></button>
+                <input type="text" id="msg-input" placeholder="Message" oninput="toggleSendBtn()">
+                <button class="action-btn" id="send-btn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        // --- FIREBASE CONFIGURATION ---
+        // നിങ്ങളുടെ Firebase വെബ് ആപ്പ് വിവരങ്ങൾ ഇവിടെ നൽകുക
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.apps.length ? firebase.firestore() : null;
+
+        let clickCount = 0;
+        let myUsername = localStorage.getItem("chat_username") || "";
+        let currentActivePeer = "";
+        let currentRoomId = "";
+        let unsubscribeMessages = null;
+        let unsubscribeRooms = null;
+
+        function handleSecretClick() {
+            clickCount++;
+            if (clickCount >= 5) {
+                clickCount = 0;
+                showModal('secret-modal');
+            }
+            setTimeout(() => { clickCount = 0; }, 3000);
+        }
+
+        function verifySecretCode() {
+            const code = document.getElementById("secret-code-input").value.trim().toLowerCase();
+            if (code === "karthik") {
+                closeModal('secret-modal');
+                document.getElementById("study-screen").style.display = "none";
+                document.getElementById("app-screen").style.display = "flex";
+                
+                if (!myUsername) {
+                    showModal('login-modal');
+                } else {
+                    listenToMyChats();
+                }
+            } else {
+                alert("തെറ്റായ കോഡ്!");
+                closeModal('secret-modal');
+            }
+            document.getElementById("secret-code-input").value = "";
+        }
+
+        function saveUsername() {
+            const name = document.getElementById("username-input").value.trim();
+            if (name) {
+                myUsername = name;
+                localStorage.setItem("chat_username", myUsername);
+                closeModal('login-modal');
+                listenToMyChats();
+            }
+        }
+
+        function createNewChatChannel() {
+            const peerName = document.getElementById("peer-name-input").value.trim();
+            if (!peerName) return;
+            if (peerName === myUsername) {
+                alert("നിങ്ങളുടെ സ്വന്തം പേര് ആഡ് ചെയ്യാൻ പറ്റില്ല!");
+                return;
+            }
+
+            currentActivePeer = peerName;
+            currentRoomId = [myUsername, peerName].sort().join("_");
+
+            if (db) {
+                db.collection("rooms").doc(currentRoomId).set({
+                    users: [myUsername, peerName],
+                    lastMessage: "",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
+
+            closeModal('add-chat-modal');
+            document.getElementById("peer-name-input").value = "";
+            openChatWindow(peerName);
+        }
+
+        function listenToMyChats() {
+            if (!db) return;
+            
+            unsubscribeRooms = db.collection("rooms")
+                .where("users", "array-contains", myUsername)
+                .onSnapshot(snapshot => {
+                    const container = document.getElementById("chat-list-container");
+                    container.innerHTML = "";
+                    
+                    if(snapshot.empty) {
+                        container.innerHTML = `<p style="text-align:center; color:#999; margin-top:20px; font-size:14px;">ചാറ്റുകൾ ഒന്നും തന്നെയില്ല. + ബട്ടൺ അമർത്തി ആഡ് ചെയ്യുക.</p>`;
+                    }
+
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const peer = data.users.find(u => u !== myUsername) || "Unknown";
+                        const lastMsg = data.lastMessage || "No messages yet";
+
+                        const item = document.createElement("div");
+                        item.className = "chat-item";
+                        item.onclick = () => openChatWindow(peer);
+                        item.innerHTML = `
+                            <div class="chat-avatar">${peer.charAt(0).toUpperCase()}</div>
+                            <div class="chat-info">
+                                <div class="chat-name">${peer}</div>
+                                <div class="chat-preview">${lastMsg}</div>
+                            </div>
+                        `;
+                        container.appendChild(item);
+                    });
+                });
+        }
+
+        function openChatWindow(peerName) {
+            currentActivePeer = peerName;
+            currentRoomId = [myUsername, peerName].sort().join("_");
+            
+            document.getElementById("chat-list-view").style.display = "none";
+            document.getElementById("chat-window-view").style.display = "flex";
+            document.getElementById("chat-window-title-name").innerText = peerName;
+
+            listenToMessages();
+        }
+
+        function backToChatList() {
+            if (unsubscribeMessages) unsubscribeMessages();
+            document.getElementById("chat-window-view").style.display = "none";
+            document.getElementById("chat-list-view").style.display = "flex";
+        }
+
+        function sendMessage() {
+            const input = document.getElementById("msg-input");
+            const text = input.value.trim();
+            if (!text || !db) return;
+
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const msgData = {
+                sender: myUsername,
+                text: text,
+                time: timeString,
+                status: "sent",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            db.collection("rooms").doc(currentRoomId).collection("messages").add(msgData);
+
+            db.collection("rooms").doc(currentRoomId).update({
+                lastMessage: text,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            input.value = "";
+        }
+
+        function listenToMessages() {
+            if (!db) return;
+            const container = document.getElementById("message-container");
+
+            unsubscribeMessages = db.collection("rooms").doc(currentRoomId).collection("messages")
+                .orderBy("timestamp", "asc")
+                .onSnapshot(snapshot => {
+                    let newIncomingMsg = false;
+                    
+                    container.innerHTML = "";
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const msgId = doc.id;
+                        const isMe = data.sender === myUsername;
+
+                        if (!isMe && data.status !== "read") {
+                            db.collection("rooms").doc(currentRoomId).collection("messages").doc(msgId).update({ status: "read" });
+                            newIncomingMsg = true; // പുതിയ മെസ്സേജ് വന്നു എന്ന് ഉറപ്പാക്കുന്നു
+                        }
+
+                        const msgDiv = document.createElement("div");
+                        msgDiv.className = `msg ${isMe ? 'sent' : 'received'}`;
+                        
+                        msgDiv.oncontextmenu = (e) => {
+                            e.preventDefault();
+                            if (isMe && data.text !== "This message was deleted") {
+                                if (confirm("Delete for Everyone?")) {
+                                    deleteMessageForEveryone(msgId);
+                                }
+                            }
+                        };
+
+                        let tickHtml = "";
+                        if (isMe) {
+                            if (data.status === "read") {
+                                tickHtml = `<i class="fa-solid fa-check-double read"></i>`;
+                            } else {
+                                tickHtml = `<i class="fa-solid fa-check"></i>`;
+                            }
+                        }
+
+                        if (data.text === "This message was deleted") {
+                            msgDiv.innerHTML = `<span class="msg-text msg-deleted"><i class="fa-solid fa-ban"></i> You deleted this message</span>`;
+                        } else {
+                            msgDiv.innerHTML = `
+                                <span class="msg-text">${data.text}</span>
+                                <span class="msg-meta">${data.time || ''} ${tickHtml}</span>
+                            `;
+                        }
+
+                        container.appendChild(msgDiv);
+                    });
+                    container.scrollTop = container.scrollHeight;
+
+                    // ചാറ്റ് വിൻഡോ ലോഡ് ചെയ്യുമ്പോൾ പുതിയ മെസ്സേജ് വന്നിട്ടുണ്ടെങ്കിൽ ഫേക്ക് നോട്ടിഫിക്കേഷൻ അയക്കുന്നു
+                    if(newIncomingMsg) {
+                        sendFakeNotification();
+                    }
+                });
+        }
+
+        function deleteMessageForEveryone(msgId) {
+            if (!db) return;
+            db.collection("rooms").doc(currentRoomId).collection("messages").doc(msgId).update({
+                text: "This message was deleted"
+            });
+            db.collection("rooms").doc(currentRoomId).update({
+                lastMessage: "🚫 Message deleted"
+            });
+        }
+
+        // --- FAKE NOTIFICATION LOGIC ---
+        function sendFakeNotification() {
+            if (Notification.permission === "granted") {
+                new Notification("പഠന സഹായി", {
+                    body: "പുതിയ ചോദ്യോത്തരങ്ങൾ ലഭ്യമാണ്. ഇപ്പോൾ തന്നെ നോക്കുക.",
+                    icon: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/book.svg"
+                });
+            }
+        }
+
+        function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // ചോദിക്കുമ്പോൾ നോട്ടിഫിക്കേഷൻ പെർമിഷൻ അലോ ചെയ്യുക
+        if (typeof Notification !== "undefined" && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>
